@@ -1,14 +1,14 @@
 import React from 'react';
 import logo from './logo.svg';
 import './App.css';
-import WebcamCapture from "./WebcamCapture";
+import CameraCapture from "./CameraCapture";
 
 function App() {
   return (
     <div className="App">
       <img src={logo} className="App-logo" alt="logo" />
       <div>
-        <WebcamCapture />
+        <CameraCapture />
       </div>
     </div>
   );

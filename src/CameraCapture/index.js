@@ -7,9 +7,10 @@ const videoConstraints = {
   facingMode: "user"
 };
 
-const WebcamCapture = () => {
+const CameraCapture = () => {
   const webcamRef = useRef(null);
   const [ imgSrc, setImgSrc ] = useState(null);
+  const [ flash, setFlash ] = useState(false);
   const [ isRecording, setIsRecording ] = useState(false);
   const [ mediaRecorder, setMediaRecorder ] = useState(null);
   const [ chunks, setChunks ] = useState([]); // array to which recording data is saved
@@ -17,8 +18,12 @@ const WebcamCapture = () => {
 
   const capture = React.useCallback(
     () => {
-      const imageSrc = webcamRef.current.getScreenshot();
-      setImgSrc(imageSrc);
+      setFlash(true);
+      setTimeout(() => {
+        setFlash(false);
+        const imageSrc = webcamRef.current.getScreenshot();
+        setImgSrc(imageSrc);
+      }, 500);
     },
     [webcamRef]
   );
@@ -40,7 +45,7 @@ const WebcamCapture = () => {
       console.log('ondataavailable!');
       setChunks((prevChunks) => [ ...prevChunks, e.data]);
     };
-    mediaRecorder.onstop = (e) => {
+    mediaRecorder.onstop = () => {
       let blob = new Blob(chunks, { 'type': 'video/mp4' });
       setChunks([]);
       let videoURL = window.URL.createObjectURL(blob);
@@ -49,8 +54,10 @@ const WebcamCapture = () => {
   }
 
   return (
-    <div>
-      <div style={{ margin: '1rem' }}>
+    <div className="CameraCapture">
+      <div
+        style={{ margin: '1rem auto', width: '40rem', position: 'relative' }}
+      >
         <Webcam
           width="100%"
           audio={true}
@@ -62,6 +69,10 @@ const WebcamCapture = () => {
             const { stream } = webcamRef.current || {};
             setMediaRecorder(new MediaRecorder(stream));  //tells mediaRecorder to listen to the media stream.
           }}
+        />
+        <div
+          className="overlay"
+          style={{ border: '1px solid grey', backgroundColor: flash ? 'white' : '', width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
         />
       </div>
       <div style={{ margin: '1rem' }}>
@@ -81,6 +92,7 @@ const WebcamCapture = () => {
       <div>
         <img
           src={imgSrc}
+          alt=""
         />
       </div>
       <div style={{ margin: '1rem' }}>
@@ -95,4 +107,4 @@ const WebcamCapture = () => {
   );
 };
 
-export default WebcamCapture;
+export default CameraCapture;
