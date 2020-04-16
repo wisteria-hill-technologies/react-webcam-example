@@ -1,29 +1,43 @@
 import React, { useState, useRef } from "react";
+import { Button } from 'reactstrap';
 import Webcam from "react-webcam";
-
-const videoConstraints = {
-  width: 1280,
-  height: 720,
-  facingMode: "user"
-};
+import { FiCamera, FiVideo } from "react-icons/fi";
+import { MdSwitchCamera } from "react-icons/md";
 
 const CameraCapture = () => {
+  const videoConstraints = {
+    width: 1280,
+    height: 720
+  };
+  const [ facingMode, setFacingMode ] = useState("user");
   const webcamRef = useRef(null);
   const [ imgSrc, setImgSrc ] = useState(null);
   const [ flash, setFlash ] = useState(false);
   const [ isRecording, setIsRecording ] = useState(false);
+  const [ recorded, setRecorded ] = useState(false);
   const [ mediaRecorder, setMediaRecorder ] = useState(null);
   const [ chunks, setChunks ] = useState([]); // array to which recording data is saved
   const playBackVideoRef = useRef();
 
+  const switchCamera = () => {
+    setFacingMode(prevState => {
+      if(prevState === 'user') {
+        return "environment";
+      } else {
+        return "user";
+      }
+    });
+  };
+
   const capture = React.useCallback(
     () => {
+      setRecorded(false);
       setFlash(true);
       setTimeout(() => {
         setFlash(false);
         const imageSrc = webcamRef.current.getScreenshot();
         setImgSrc(imageSrc);
-      }, 500);
+      }, 100);
     },
     [webcamRef]
   );
@@ -31,18 +45,17 @@ const CameraCapture = () => {
   const toggleRecording = () => {
     if(isRecording) {
       mediaRecorder.stop();
-      console.log(mediaRecorder.state);
+      setRecorded(true);
     } else {
+      setImgSrc('');
       mediaRecorder.start();
-      console.log(mediaRecorder.state);
+      setRecorded(false);
     }
     setIsRecording(prevState => !prevState);
   };
 
   if (mediaRecorder !== null) {
-    console.log('mediaRecorder>>', mediaRecorder);
     mediaRecorder.ondataavailable = (e) => {
-      console.log('ondataavailable!');
       setChunks((prevChunks) => [ ...prevChunks, e.data]);
     };
     mediaRecorder.onstop = () => {
@@ -54,48 +67,74 @@ const CameraCapture = () => {
   }
 
   return (
-    <div className="CameraCapture">
+    <div className="CameraCapture p-2 m-2 border">
+      <h1 className="display-2">Camera Capture</h1>
       <div
-        style={{ margin: '1rem auto', width: '40rem', position: 'relative' }}
+        className="my-1 mx-auto position-relative"
+        style={{ maxWidth: '40rem' }}
       >
         <Webcam
           width="100%"
           audio={true}
           ref={webcamRef}
           screenshotFormat="image/jpeg"
-          videoConstraints={videoConstraints}
+          videoConstraints={{ ...videoConstraints, facingMode } }
           onUserMedia={() => {
-            console.log('webcamRef>>>', webcamRef.current);
             const { stream } = webcamRef.current || {};
             setMediaRecorder(new MediaRecorder(stream));  //tells mediaRecorder to listen to the media stream.
           }}
         />
         <div
-          className="overlay"
-          style={{ border: '1px solid grey', backgroundColor: flash ? 'white' : '', width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
+          className="overlay w-100 h-100 position-absolute"
+          style={{ backgroundColor: flash ? 'white' : '', top: 0, left: 0 }}
         />
       </div>
-      <div style={{ margin: '1rem' }}>
-        <button
-          style={{ padding: '1rem', background: isRecording ? 'red' : 'green', fontSize: '1rem', color: 'white', borderRadius: '0.5rem', margin: '1rem' }}
+      <div
+        className="m-1 d-flex justify-content-center flex-wrap"
+      >
+        <Button
+          className="photoCaptureButton m-1 d-flex justify-content-center align-items-center"
+          onClick={switchCamera}
+        >
+          <MdSwitchCamera />&nbsp;
+          Switch Camera
+        </Button>
+        <Button
+          className="videoRecordingButton text-white m-1 d-flex justify-content-center align-items-center"
+          style={{ background: isRecording ? 'red' : 'green' }}
           onClick={toggleRecording}
         >
-          { isRecording ? 'Stop Recording' : 'Start Recording' }
-        </button>
-        <button
-          style={{ padding: '1rem', fontSize: '1rem', color: 'black', borderRadius: '0.5rem', margin: '1rem' }}
+          <FiVideo />&nbsp;{ isRecording ? 'Stop Recording' : 'Record Video' }
+        </Button>
+        <Button
+          color="info"
+          className="photoCaptureButton m-1 d-flex justify-content-center align-items-center"
           onClick={capture}
         >
+          <FiCamera />&nbsp;
           Capture photo
-        </button>
+        </Button>
       </div>
-      <div>
-        <img
-          src={imgSrc}
-          alt=""
-        />
-      </div>
-      <div style={{ margin: '1rem' }}>
+      {
+        imgSrc && (
+          <div
+            className="my-1 mx-auto position-relative w-100"
+            style={{ maxWidth: '40rem' }}
+          >
+            <p className="display-3 mb-0">Captured Photo</p>
+            <img
+              className="w-100"
+              src={imgSrc}
+              alt=""
+            />
+          </div>
+        )
+      }
+      <div
+        className="my-1 mx-auto position-relative w-100"
+        style={{ maxWidth: '40rem', display: recorded ? "block" : "none" }}
+      >
+        <p className="display-3 mb-0">Recorded Video</p>
         <video
           width="100%"
           controls
