@@ -1,8 +1,10 @@
 import React, { useState, useRef } from "react";
 import { Button } from 'reactstrap';
 import Webcam from "react-webcam";
+import moment from 'moment';
 import { FiCamera, FiVideo } from "react-icons/fi";
 import { MdSwitchCamera } from "react-icons/md";
+import b64toBlob from './b64ToBlob';
 
 const CameraCapture = () => {
   const videoConstraints = {
@@ -16,6 +18,7 @@ const CameraCapture = () => {
   const [ isRecording, setIsRecording ] = useState(false);
   const [ recorded, setRecorded ] = useState(false);
   const [ mediaRecorder, setMediaRecorder ] = useState(null);
+  const [ videoFile, setVideoFile ] = useState(null);
   const [ chunks, setChunks ] = useState([]); // array to which recording data is saved
   const playBackVideoRef = useRef();
 
@@ -35,12 +38,19 @@ const CameraCapture = () => {
       setFlash(true);
       setTimeout(() => {
         setFlash(false);
-        const imageSrc = webcamRef.current.getScreenshot();
+        const imageSrc = webcamRef.current.getScreenshot();  // imageSrc is base64
         setImgSrc(imageSrc);
       }, 100);
     },
     [webcamRef]
   );
+
+  const onSaveImage = () => {
+    const base64Str = imgSrc.split('data:image/jpeg;base64,')[1];
+    const blob = b64toBlob(base64Str, "image/jpeg");
+    const dateTimeStr = moment().format("YYYY-MM-DD_HH-mm-ss");
+    const imageFile = new File([blob], `image_${dateTimeStr}.jpg`, { type: blob.type });  // image converted to a file
+  };
 
   const toggleRecording = () => {
     if(isRecording) {
@@ -48,6 +58,7 @@ const CameraCapture = () => {
       setRecorded(true);
     } else {
       setImgSrc('');
+      setVideoFile(null);
       mediaRecorder.start();
       setRecorded(false);
     }
@@ -63,18 +74,26 @@ const CameraCapture = () => {
       setChunks([]);
       let videoURL = window.URL.createObjectURL(blob);
       playBackVideoRef.current.src = videoURL;
+      const dateTimeStr = moment().format("YYYY-MM-DD_HH-mm-ss");
+      const file = new File([blob], `video_${dateTimeStr}.mp4`, { type: blob.type });
+      setVideoFile(file);
     };
   }
 
+  const onSaveVideo = () => {
+    // save somewhere videoFile in state
+  };
+
   return (
     <div className="CameraCapture p-2 m-2 border">
-      <h1 className="display-2">Camera Capture</h1>
+      <h1 className="display-4">Camera Capture</h1>
       <div
         className="my-1 mx-auto position-relative"
-        style={{ maxWidth: '40rem' }}
+        style={{ maxWidth: '30rem' }}
       >
         <Webcam
           width="100%"
+          height="100%"
           audio={true}
           ref={webcamRef}
           screenshotFormat="image/jpeg"
@@ -121,7 +140,17 @@ const CameraCapture = () => {
             className="my-1 mx-auto position-relative w-100"
             style={{ maxWidth: '40rem' }}
           >
-            <p className="display-3 mb-0">Captured Photo</p>
+            <p className="display-4 mb-0">
+              Captured Photo
+              &nbsp;
+              <Button
+                color="info"
+                className="photoSaveButton"
+                onClick={onSaveImage}
+              >
+                Save
+              </Button>
+            </p>
             <img
               className="w-100"
               src={imgSrc}
@@ -134,7 +163,17 @@ const CameraCapture = () => {
         className="my-1 mx-auto position-relative w-100"
         style={{ maxWidth: '40rem', display: recorded ? "block" : "none" }}
       >
-        <p className="display-3 mb-0">Recorded Video</p>
+        <p className="display-4 mb-0">
+          Recorded Video
+          &nbsp;
+          <Button
+            color="info"
+            className="photoSaveButton"
+            onClick={onSaveVideo}
+          >
+            Save
+          </Button>
+        </p>
         <video
           width="100%"
           controls
