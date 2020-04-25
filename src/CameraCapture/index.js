@@ -7,6 +7,9 @@ import { MdSwitchCamera } from "react-icons/md";
 import b64toBlob from './b64ToBlob';
 
 const CameraCapture = () => {
+  const mime = MediaRecorder.isTypeSupported("video/webm; codecs=vp9")
+    ? "video/webm; codecs=vp9"
+    : "video/webm";
   const videoConstraints = {
     width: 1280,
     height: 720
@@ -60,9 +63,13 @@ const CameraCapture = () => {
       setImgSrc('');
       setVideoFile(null);
       mediaRecorder.start();
+      setTimeout(()=>{
+        mediaRecorder.stop();
+        setRecorded(true);
+        setIsRecording(prevState => !prevState);
+      }, 10000);
       setRecorded(false);
     }
-    setIsRecording(prevState => !prevState);
   };
 
   if (mediaRecorder !== null) {
@@ -70,12 +77,12 @@ const CameraCapture = () => {
       setChunks((prevChunks) => [ ...prevChunks, e.data]);
     };
     mediaRecorder.onstop = () => {
-      let blob = new Blob(chunks, { 'type': 'video/mp4' });
+      let blob = new Blob(chunks, { 'type': mime });
       setChunks([]);
       let videoURL = window.URL.createObjectURL(blob);
       playBackVideoRef.current.src = videoURL;
       const dateTimeStr = moment().format("YYYY-MM-DD_HH-mm-ss");
-      const file = new File([blob], `video_${dateTimeStr}.mp4`, { type: blob.type });
+      const file = new File([blob], `video_${dateTimeStr}.webm`, { type: mime });
       setVideoFile(file);
     };
   }
@@ -100,7 +107,7 @@ const CameraCapture = () => {
           videoConstraints={{ ...videoConstraints, facingMode } }
           onUserMedia={() => {
             const { stream } = webcamRef.current || {};
-            setMediaRecorder(new MediaRecorder(stream));  //tells mediaRecorder to listen to the media stream.
+            setMediaRecorder(new MediaRecorder(stream, { mimeType: mime }));  //tells mediaRecorder to listen to the media stream.
           }}
         />
         <div
@@ -137,8 +144,8 @@ const CameraCapture = () => {
       {
         imgSrc && (
           <div
-            className="my-1 mx-auto position-relative w-100"
-            style={{ maxWidth: '40rem' }}
+            className="my-1 mx-auto position-relative"
+            style={{ maxWidth: '30rem' }}
           >
             <p className="display-4 mb-0">
               Captured Photo
@@ -160,8 +167,8 @@ const CameraCapture = () => {
         )
       }
       <div
-        className="my-1 mx-auto position-relative w-100"
-        style={{ maxWidth: '40rem', display: recorded ? "block" : "none" }}
+        className="my-1 mx-auto position-relative"
+        style={{ maxWidth: '30rem', display: recorded ? "block" : "none" }}
       >
         <p className="display-4 mb-0">
           Recorded Video
@@ -175,7 +182,7 @@ const CameraCapture = () => {
           </Button>
         </p>
         <video
-          width="100%"
+          className="w-100"
           controls
           ref={playBackVideoRef}
           playsInline
