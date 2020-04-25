@@ -18,8 +18,8 @@ const CameraCapture = () => {
   const webcamRef = useRef(null);
   const [ imgSrc, setImgSrc ] = useState(null);
   const [ flash, setFlash ] = useState(false);
-  const [ isRecording, setIsRecording ] = useState(false);
-  const [ recorded, setRecorded ] = useState(false);
+  const [ isRecording, setIsRecording ] = useState(false);  // to toggle during recording
+  const [ recorded, setRecorded ] = useState(false); // to hide/show recorded video element based on whether video is recorded or not.
   const [ mediaRecorder, setMediaRecorder ] = useState(null);
   const [ videoFile, setVideoFile ] = useState(null);
   const [ chunks, setChunks ] = useState([]); // array to which recording data is saved
@@ -59,16 +59,20 @@ const CameraCapture = () => {
     if(isRecording) {
       mediaRecorder.stop();
       setRecorded(true);
+      setIsRecording(false);
     } else {
       setImgSrc('');
       setVideoFile(null);
+      setRecorded(false);
+      setIsRecording(true);
       mediaRecorder.start();
       setTimeout(()=>{
-        mediaRecorder.stop();
-        setRecorded(true);
-        setIsRecording(prevState => !prevState);
-      }, 10000);
-      setRecorded(false);
+        if (mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+          setRecorded(true);
+          setIsRecording(false);
+        }
+      }, 6000);
     }
   };
 
@@ -130,7 +134,7 @@ const CameraCapture = () => {
           style={{ background: isRecording ? 'red' : 'green' }}
           onClick={toggleRecording}
         >
-          <FiVideo />&nbsp;{ isRecording ? 'Stop Recording' : 'Record Video' }
+          <FiVideo />&nbsp;{ isRecording ? 'Stop Recording' : 'Record max 5 seconds' }
         </Button>
         <Button
           color="info"
