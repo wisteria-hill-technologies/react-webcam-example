@@ -5,6 +5,7 @@ import moment from 'moment';
 import { FiCamera, FiVideo } from "react-icons/fi";
 import { MdSwitchCamera } from "react-icons/md";
 import b64toBlob from './b64ToBlob';
+import FileSaver from 'file-saver';
 
 const CameraCapture = () => {
   const mime = MediaRecorder.isTypeSupported("video/webm; codecs=vp9")
@@ -72,7 +73,7 @@ const CameraCapture = () => {
           setRecorded(true);
           setIsRecording(false);
         }
-      }, 6000);
+      }, 5000);
     }
   };
 
@@ -81,13 +82,15 @@ const CameraCapture = () => {
       setChunks((prevChunks) => [ ...prevChunks, e.data]);
     };
     mediaRecorder.onstop = () => {
-      let blob = new Blob(chunks, { 'type': mime });
+      let blob = new Blob(chunks, { 'type': 'video/webm' });
       setChunks([]);
       let videoURL = window.URL.createObjectURL(blob);
       playBackVideoRef.current.src = videoURL;
       const dateTimeStr = moment().format("YYYY-MM-DD_HH-mm-ss");
       const file = new File([blob], `video_${dateTimeStr}.webm`, { type: mime });
       setVideoFile(file);
+      // testing if the file can be downloaded and played correctly.
+      FileSaver.saveAs(blob, 'test-video.webm');
     };
   }
 
